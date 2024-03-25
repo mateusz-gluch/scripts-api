@@ -1,0 +1,75 @@
+name: "Deploy Asset Events API to ADEI-Production"
+
+on:
+  workflow_dispatch:
+    inputs:
+      releaseTag:
+        description: "Tag for the release"
+        required: true
+      additionalInformation:
+        description: "Additional information/Release title"
+        required: false
+env:
+  API_IMAGE_NAME: events-api
+  ACR_ENDPOINT: elmodisassetsregistry.azurecr.io
+
+jobs:
+  update_versions:
+    name: Checkout helm repository and create release for API and Sync
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Get tag
+        id: get_tag
+        run: |
+          LATEST_TAG=${{ github.event.inputs.releaseTag }}
+          echo "::set-output name=tag::${LATEST_TAG}"
+          echo $LATEST_TAG
+
+      - name: Checkout Configuration Repo
+        uses: actions/checkout@v3
+        with:
+          repository: elmodis/adei-charts.git
+          ref: "main"
+          token: ${{ secrets.ACCESS_TOKEN }}
+
+      - name: Update API version
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          DOCKER_TAG=${{ steps.get_tag.outputs.tag }}
+          cd scripts
+          sudo sed -i 's#'${{ env.ACR_ENDPOINT }}'/'${{ env.API_IMAGE_NAME }}'.*#'${{ env.ACR_ENDPOINT }}'/'${{ env.API_IMAGE_NAME }}':'"$DOCKER_TAG"'"#g' values.yaml
+          sudo sed -i "s/apiVersion.*/apiVersion: \"$DOCKER_TAG\"/" values.yaml
+          git add .
+          git commit -m "Update version of $API_IMAGE_NAME to $DOCKER_TAG"
+          git push -u origin main
+
+      - name: Create Release
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.ACCESS_TOKEN }}
+          script: |
+            const tag = "${{ steps.get_tag.outputs.tag }}"
+            const repo = context.repo;
+            try {
+              // Get the commit SHA for the tag
+              const tagData = await github.rest.git.getRef({
+                ...repo,
+                ref: `tags/${tag}`
+              });
+              const commitSha = tagData.data.object.sha;
+              
+              // Create the release
+              const response = await github.rest.repos.createRelease({
+                ...repo,
+                tag_name: tag,
+                name: `Release ${{ env.API_IMAGE_NAME }}:${tag} - ${{ github.event.inputs.additionalInformation }}`,
+                body: `${{ github.event.inputs.additionalInformation }}`,
+                target_commitish: commitSha
+              });
+            } catch (error) {
+              console.error(error);
+            }

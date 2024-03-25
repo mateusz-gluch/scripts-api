@@ -1,0 +1,153 @@
+name: "Deploy Script API to ADEI-Development"
+
+on:
+  pull_request:
+    branches: [main]
+    types: [closed]
+    paths-ignore:
+      - ".github/workflows/**"
+
+#non-sensitive config data
+env:
+  API_IMAGE_NAME: scripts-api
+  ACR_ENDPOINT: elmodisassetsregistry.azurecr.io
+
+jobs:
+  get_tag:
+    name: Obtain Repository Tag from PR Message or Repository
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main'
+    outputs:
+      version: ${{ steps.tag.outputs.version }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Get PR message
+        id: pr
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.ACCESS_TOKEN }}
+          script: |
+            const prNumber = context.payload.pull_request.number;
+            const { data: pullRequest } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: prNumber
+            });
+            return pullRequest.body;
+
+      - name: Print PR message
+        run: echo "${{ steps.pr.outputs.result }}"
+
+      - name: Parse PR message for version string or get latest tag
+        id: tag
+        run: |
+          MESSAGE=${{ steps.pr.outputs.result }}
+          VERSION_REGEX_PR='VERSION=v([0-9]+\.[0-9]+\.[0-9]+)'
+          VERSION_REGEX_TAG='v([0-9]+\.[0-9]\.[0-9]+)'
+
+          if [[ $MESSAGE =~ $VERSION_REGEX_PR ]]; then
+            VERSION="${BASH_REMATCH[1]}"
+            VERSION="v${VERSION}"
+            
+            echo "Version found: ${VERSION}"
+            # echo "::set-output name=version::${VERSION}"
+            echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+          else    
+            echo "No version string found in PR message. Trying to get the latest tag..."
+            git fetch --tags
+            LATEST_TAG=$(git tag -l | sed 's/[^0-9]*\([0-9]\+\.[0-9]\+\.[0-9]\+\).*/\1/' | sort -V | tail -n 1)
+            LATEST_TAG="v${LATEST_TAG}"
+            echo $LATEST_TAG
+            if [[ $LATEST_TAG =~ $VERSION_REGEX_TAG ]]; then
+              VERSION="${BASH_REMATCH[1]}"
+              IFS='.' read -ra ADDR <<< "$VERSION"
+              ADDR[2]=$((${ADDR[2]}+1))
+              VERSION=$(IFS='.' ; echo "${ADDR[*]}")
+              VERSION="v${VERSION}"
+              echo "Latest tag incremented: $VERSION"
+              # echo "::set-output name=version::$VERSION"
+              echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+            else
+              echo "No valid tag found. Using default version..."
+              VERSION="v1.0.0"
+              # echo "::set-output name=version::$VERSION"
+              echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+            fi
+          fi
+
+  build_push_api:
+    name: Build API docker image, push & deploy
+    runs-on: ubuntu-latest
+    needs: ["get_tag"]
+    if: github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main'
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Log in into registry
+        uses: docker/login-action@v1
+        with:
+          registry: ${{ env.ACR_ENDPOINT }}
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
+
+      - name: Build and push Docker Image
+        id: dockerbuild
+        run: |
+          GITHUB_USERNAME="${{ secrets.ACCESS_USERNAME }}"
+          GITHUB_TOKEN="${{ secrets.ACCESS_TOKEN }}"
+          DOCKER_TAG="${{ needs.get_tag.outputs.version }}"
+
+          docker build . \
+            -t $ACR_ENDPOINT/${{ env.API_IMAGE_NAME }}:$DOCKER_TAG \
+            -f ./src/dockerfile \
+            --build-arg="GITHUB_USERNAME=${{ secrets.ACCESS_USERNAME }}" \
+            --build-arg="GITHUB_TOKEN=${{ secrets.ACCESS_TOKEN }}"
+
+          docker push $ACR_ENDPOINT/${{ env.API_IMAGE_NAME }}:$DOCKER_TAG
+          echo "Built ${{ env.API_IMAGE_NAME }}"
+
+  update_charts:
+    needs:
+      - "build_push_api"
+      - "get_tag"
+    name: Deploy Built Docker Images to ADEI-Development
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout CD charts repository
+        uses: actions/checkout@v3
+        with:
+          repository: elmodis/adei-charts-dev.git
+          ref: "main"
+          token: ${{ secrets.ACCESS_TOKEN }}
+
+      - name: Update image version in CD chart for Counts Sync
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          DOCKER_TAG="${{ needs.get_tag.outputs.version }}"
+          cd scripts
+          sudo sed -i 's#'${{ env.ACR_ENDPOINT }}'/'${{ env.API_IMAGE_NAME }}'.*#'${{ env.ACR_ENDPOINT }}'/'${{ env.API_IMAGE_NAME }}':'"$DOCKER_TAG"'"#g' values.yaml
+          sudo sed -i "s/apiVersion.*/apiVersion: \"$DOCKER_TAG\"/" values.yaml
+          git commit -am "Update version of ${{ env.API_IMAGE_NAME }} to $DOCKER_TAG"
+          git push -u origin main
+
+      - name: Tag version in repo
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.ACCESS_TOKEN }}
+          script: |
+            const appTag = "${{ needs.get_tag.outputs.version }}";
+            const ref = "refs/tags/" + appTag;
+            const sha = context.payload.pull_request.head.sha;
+            await github.rest.git.createRef({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: ref,
+              sha: sha
+            });
