@@ -42,8 +42,6 @@ func init() {
 		gin.SetMode(gin.ReleaseMode)
 	}
 
-	// logging.Greet(cfg.App)
-
 	engine = gin.New()
 	engine.Use(gin.Recovery())
 	engine.Use(log.Middleware())
