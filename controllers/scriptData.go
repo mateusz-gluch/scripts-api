@@ -36,15 +36,16 @@ type ScriptDataController struct {
 //
 //	@Param			scriptName		path	string	true	"Unique Script Identifier"														enum(events-summary, online-summary)
 //	@Param			ts				query	string	true	"Timestamp range in format {startTs}:{endTs}. Timestamps in seconds, tz=UTC"	default(1708300800:1708387200)
-//	@Param			organization	query	int		false	"Organization Integer Identifier"												default(elmodis)
-//	@Param			assetId			query	string	false	"Comma separated list of Asset IDs"												default(367)
-//	@Param			category		query	string	false	"(available in events-summary) Comma separated list of events"					example(motor,motor.Psum)
+//	@Param			organization	query	int		false	"Organization Integer Identifier"												default(213)
+//	@Param			assetId			query	string	false	"Comma separated list of Asset IDs"												default(367,333)
+//	@Param			category		query	string	false	"(available in events-summary) Comma separated list of event categories"		example(MACHINE,DATA)
 //
 //	@Tags			Assets
 //	@Accept			json
 //	@Produce		json
 //	@Success		200	{object}	[]map[string]any
-//	@Router			/{organization}/assets/{assetId} [get]
+//	@Router			/{scriptName}/data [get]
+
 func (c *ScriptDataController) GetData() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		var fmter formatters.Formatter[map[string]any]

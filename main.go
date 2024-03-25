@@ -4,6 +4,7 @@ import (
 	"scripts-api/configurators"
 	ctrl "scripts-api/controllers"
 	"scripts-api/dataengine"
+	"scripts-api/docs"
 	"scripts-api/repos"
 	"time"
 
@@ -21,7 +22,6 @@ import (
 	"github.com/gin-gonic/gin"
 	swaggerfiles "github.com/swaggo/files"
 	swaggergin "github.com/swaggo/gin-swagger"
-	"github.com/swaggo/swag/example/basic/docs"
 )
 
 var engine, metrics *gin.Engine
