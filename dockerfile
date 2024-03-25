@@ -20,6 +20,6 @@ RUN go build .
 FROM debian:bookworm-slim AS run
 
 WORKDIR /app
-COPY --from=build /app/src/ .
+COPY --from=build /app .
 CMD ["./scripts-api"]
 
