@@ -47,7 +47,7 @@ func init() {
 	engine = gin.New()
 	engine.Use(gin.Recovery())
 	engine.Use(log.Middleware())
-	engine.Use(monitoring.Middleware("counts"))
+	engine.Use(monitoring.Middleware("scripts"))
 
 	metrics = gin.New()
 	metrics.Use(gin.Recovery())
