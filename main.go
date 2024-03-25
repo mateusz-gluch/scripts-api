@@ -5,6 +5,7 @@ import (
 	ctrl "scripts-api/controllers"
 	"scripts-api/dataengine"
 	"scripts-api/docs"
+	"scripts-api/handlers"
 	"scripts-api/repos"
 	"time"
 
@@ -134,7 +135,8 @@ func main() {
 	engine.GET("/", misc.Root())
 
 	// counts
-	engine.GET("/:scriptName/data", data.GetData())
+	engine.GET("/events-summary/data", handlers.EventsSummary(&data))
+	engine.GET("/online-summary/data", handlers.OnlineSummary(&data))
 
 	go metrics.Run(":8081")
 	engine.Run(":8080")

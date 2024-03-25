@@ -24,27 +24,6 @@ type ScriptDataController struct {
 	OrganizationValid validators.Validator
 }
 
-//	@BasePath	/api/v1
-//
-// Root godoc
-//
-//	@Summary	Retrieves script data for asset context
-//	@Description
-//	@Description	Currently available scripts
-//	@Description	- events-summary - Summarizes daily state event occurences
-//	@Description	- online-summary - Summarizes daily datasource activity
-//
-//	@Param			scriptName		path	string	true	"Unique Script Identifier"														enum(events-summary, online-summary)
-//	@Param			ts				query	string	true	"Timestamp range in format {startTs}:{endTs}. Timestamps in seconds, tz=UTC"	default(1708300800:1708387200)
-//	@Param			organization	query	int		false	"Organization Integer Identifier"												default(213)
-//	@Param			assetId			query	string	false	"Comma separated list of Asset IDs"												default(367,333)
-//	@Param			category		query	string	false	"(available in events-summary) Comma separated list of event categories"		example(MACHINE,DATA)
-//
-//	@Tags			Assets
-//	@Accept			json
-//	@Produce		json
-//	@Success		200	{object}	[]map[string]any
-//	@Router			/{scriptName}/data [get]
 func (c *ScriptDataController) GetData() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		var fmter formatters.Formatter[map[string]any]
