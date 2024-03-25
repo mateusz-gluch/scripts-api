@@ -43,7 +43,7 @@ type ScriptDataController struct {
 //	@Tags			Assets
 //	@Accept			json
 //	@Produce		json
-//	@Success		200	{object}	requests.EventsResponse
+//	@Success		200	{object}	[]map[string]any
 //	@Router			/{organization}/assets/{assetId} [get]
 func (c *ScriptDataController) GetData() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
