@@ -45,7 +45,6 @@ type ScriptDataController struct {
 //	@Produce		json
 //	@Success		200	{object}	[]map[string]any
 //	@Router			/{scriptName}/data [get]
-
 func (c *ScriptDataController) GetData() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		var fmter formatters.Formatter[map[string]any]
