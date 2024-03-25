@@ -1,4 +1,4 @@
-name: "Deploy Script API to ADEI-Development"
+name: "Deploy Scripts API to ADEI-Development"
 
 on:
   pull_request:
@@ -105,7 +105,7 @@ jobs:
 
           docker build . \
             -t $ACR_ENDPOINT/${{ env.API_IMAGE_NAME }}:$DOCKER_TAG \
-            -f ./src/dockerfile \
+            -f ./dockerfile \
             --build-arg="GITHUB_USERNAME=${{ secrets.ACCESS_USERNAME }}" \
             --build-arg="GITHUB_TOKEN=${{ secrets.ACCESS_TOKEN }}"
 
