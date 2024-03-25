@@ -128,7 +128,17 @@ func (repo *ScriptDataRepository) filterTimestamp(
 			return nil, fmt.Errorf("timestamp not provided in schema - spec: %+v", spec)
 		}
 
-		recordTs, err := time.Parse(time.RFC3339, ts.(string)+"Z")
+		tz, ok := record["timezone"]
+		if !ok {
+			return nil, fmt.Errorf("timezone not provided in schema - spec: %+v", spec)
+		}
+
+		loc, err := time.LoadLocation(tz.(string))
+		if err != nil {
+			return nil, fmt.Errorf("timezone: %s", err.Error())
+		}
+
+		recordTs, err := time.ParseInLocation(time.RFC3339, ts.(string)+"Z", loc)
 		if err != nil {
 			return nil, fmt.Errorf("timestamp provided in incorrect format: %s spec: %+v", err.Error(), spec)
 		}
