@@ -11,7 +11,7 @@ RUN go install github.com/swaggo/swag/cmd/swag@latest
 WORKDIR /app
 COPY . .
 
-WORKDIR /app/src
+WORKDIR /app
 RUN swag i
 
 RUN go mod download
