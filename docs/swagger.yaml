@@ -1,0 +1,108 @@
+basePath: /
+externalDocs:
+  description: OpenAPI
+  url: https://swagger.io/resources/open-api/
+host: dev-internal-api.elmodis.com
+info:
+  contact:
+    email: mateusz-gluch@elmodis.com
+    name: Elmodis
+  title: Internal Scripts API
+  version: "1.0"
+paths:
+  /:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves and prints API information. This information contains
+        basic API description.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: Retrieves basic API information
+      tags:
+      - Misc
+  /{organization}/assets/{assetId}:
+    get:
+      consumes:
+      - application/json
+      description: |-
+        Currently available scripts
+        - events-summary - Summarizes daily state event occurences
+        - online-summary - Summarizes daily datasource activity
+      parameters:
+      - description: Unique Script Identifier
+        in: path
+        name: scriptName
+        required: true
+        type: string
+      - default: 1708300800:1708387200
+        description: Timestamp range in format {startTs}:{endTs}. Timestamps in seconds,
+          tz=UTC
+        in: query
+        name: ts
+        required: true
+        type: string
+      - description: Organization Integer Identifier
+        in: query
+        name: organization
+        type: integer
+      - default: "367"
+        description: Comma separated list of Asset IDs
+        in: query
+        name: assetId
+        type: string
+      - description: (available in events-summary) Comma separated list of events
+        example: motor,motor.Psum
+        in: query
+        name: category
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              additionalProperties: true
+              type: object
+            type: array
+      summary: Retrieves script data for asset context
+      tags:
+      - Assets
+  /ping:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves and prints ping message.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: Pings API
+      tags:
+      - Misc
+  /version:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves and prints API version. This information contains API
+        app version information
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: Retrieves API Version
+      tags:
+      - Misc
+swagger: "2.0"
