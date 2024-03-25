@@ -24,6 +24,7 @@ import (
 //	@Router			/online-summary/data [get]
 func OnlineSummary(c *controllers.ScriptDataController) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
+		ctx.AddParam("scriptName", "online-summary")
 		h := c.GetData()
 		h(ctx)
 	}

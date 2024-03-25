@@ -24,6 +24,7 @@ import (
 //	@Router			/events-summary/data [get]
 func EventsSummary(c *controllers.ScriptDataController) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
+		ctx.AddParam("scriptName", "events-summary")
 		h := c.GetData()
 		h(ctx)
 	}
