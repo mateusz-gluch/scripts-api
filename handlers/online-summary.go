@@ -15,7 +15,7 @@ import (
 //
 //	@Param			ts				query	string	true	"Timestamp range in format {startTs}:{endTs}. Timestamps in seconds, tz=UTC"	default(1708300800:1708387200)
 //	@Param			organization	query	int		false	"Organization Integer Identifier"												default(213)
-//	@Param			assetId			query	string	false	"Comma separated list of Asset IDs"												default(367,333)
+//	@Param			assets			query	string	false	"Comma separated list of Asset IDs"												default(367,333)
 //
 //	@Tags			Data
 //	@Accept			json
