@@ -63,7 +63,12 @@ func (c *ScriptDataController) GetData() gin.HandlerFunc {
 func (c *ScriptDataController) parseSpec(ctx *gin.Context) (*model.ScriptSpec, error) {
 	spec := new(model.ScriptSpec)
 
-	ts, err := c.Timestamp.Parse(ctx.Query("ts"))
+	tsStr := ctx.Query("ts")
+	if tsStr != "" {
+		tsStr = ctx.Param("ts")
+	}
+
+	ts, err := c.Timestamp.Parse(tsStr)
 	if err != nil {
 		return nil, fmt.Errorf("timestamp: %s", err.Error())
 	}
