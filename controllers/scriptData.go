@@ -64,7 +64,7 @@ func (c *ScriptDataController) parseSpec(ctx *gin.Context) (*model.ScriptSpec, e
 	spec := new(model.ScriptSpec)
 
 	tsStr := ctx.Query("ts")
-	if tsStr != "" {
+	if tsStr == "" {
 		tsStr = ctx.Param("ts")
 	}
 
