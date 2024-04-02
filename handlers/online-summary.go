@@ -29,7 +29,7 @@ func OnlineSummary(c *controllers.ScriptDataController) gin.HandlerFunc {
 
 		if ctx.Query("ts") == "" {
 			end := time.Now()
-			delay := time.Duration(7 * 24 * time.Hour)
+			delay := time.Duration(8 * 24 * time.Hour)
 			start := end.Add(-delay)
 			ctx.AddParam("ts", fmt.Sprintf("%d:%d", start.Unix(), end.Unix()))
 		}
