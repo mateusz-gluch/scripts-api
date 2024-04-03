@@ -3,20 +3,19 @@ package main
 import (
 	"scripts-api/configurators"
 	ctrl "scripts-api/controllers"
-	"scripts-api/dataengine"
 	"scripts-api/docs"
 	"scripts-api/handlers"
-	"scripts-api/repos"
 	"time"
 
 	log "github.com/elmodis/go-libs/api/logging"
 	"github.com/elmodis/go-libs/api/monitoring"
 	"github.com/elmodis/go-libs/caches"
 	cli "github.com/elmodis/go-libs/clients"
+	"github.com/elmodis/go-libs/fileengines"
 	"github.com/elmodis/go-libs/models/enums"
 	"github.com/elmodis/go-libs/models/properties"
 	"github.com/elmodis/go-libs/parsers"
-	repo "github.com/elmodis/go-libs/repositories"
+	"github.com/elmodis/go-libs/repositories"
 	"github.com/elmodis/go-libs/validators"
 	"github.com/sirupsen/logrus"
 
@@ -71,14 +70,14 @@ func init() {
 		Local:  assetsCache,
 	}
 
-	assets := &repo.PropertiesAPIRepo[properties.Asset]{
+	assets := &repositories.PropertiesAPIRepo[properties.Asset]{
 		Engine:   assetsCachingApi,
 		Label:    "assets",
 		PathSpec: "assets/%s",
 	}
 
-	scriptData := &repos.ScriptDataRepository{
-		Engine: &dataengine.CSVEngine{RootDir: cfg.MountPath},
+	scriptData := &repositories.ScriptDataRepository{
+		Engine: &fileengines.CSVEngine{RootDir: cfg.MountPath},
 	}
 
 	filterParser := map[string]parsers.Parser[[]string]{
