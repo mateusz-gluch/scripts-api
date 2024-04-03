@@ -138,7 +138,7 @@ func (repo *ScriptDataRepository) filterTimestamp(
 			return nil, fmt.Errorf("timezone: %s", err.Error())
 		}
 		recordStr := strings.Replace(ts.(string), "T", " ", 1)
-		recordTsEnd, err := time.ParseInLocation(time.RFC3339, recordStr, loc)
+		recordTsEnd, err := time.ParseInLocation("2006-01-02", recordStr, loc)
 		if err != nil {
 			return nil, fmt.Errorf("timestamp provided in incorrect format: %s spec: %+v", err.Error(), spec)
 		}
