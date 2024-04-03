@@ -125,7 +125,7 @@ func (repo *ScriptDataRepository) filterTimestamp(
 	for _, record := range records {
 		ts, ok := record["workingDay"]
 		if !ok {
-			return nil, fmt.Errorf("timestamp not provided in schema - spec: %+v", spec)
+			return nil, fmt.Errorf("timestamp not provided in schema - spec: %+v, record: %+v", spec, record)
 		}
 
 		tz, ok := record["timezone"]
