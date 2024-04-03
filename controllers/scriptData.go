@@ -50,12 +50,12 @@ func (c *ScriptDataController) GetData() gin.HandlerFunc {
 			return
 		}
 
-		retStr, err := fmter.Format(*ret)
+		_, err = fmter.Format(*ret, ctx)
 		if err != nil {
 			ctx.String(500, err.Error())
 			return
 		}
-		ctx.String(200, retStr)
+		// ctx.String(200, retStr)
 	}
 
 }
