@@ -123,7 +123,7 @@ func (repo *ScriptDataRepository) filterTimestamp(
 	ret := make([]map[string]any, 0)
 
 	for _, record := range records {
-		ts, ok := record["timestamp"]
+		ts, ok := record["workingDay"]
 		if !ok {
 			return nil, fmt.Errorf("timestamp not provided in schema - spec: %+v", spec)
 		}
@@ -138,12 +138,14 @@ func (repo *ScriptDataRepository) filterTimestamp(
 			return nil, fmt.Errorf("timezone: %s", err.Error())
 		}
 		recordStr := strings.Replace(ts.(string), "T", " ", 1)
-		recordTs, err := time.ParseInLocation(time.DateTime, recordStr, loc)
+		recordTsEnd, err := time.ParseInLocation(time.RFC3339, recordStr, loc)
 		if err != nil {
 			return nil, fmt.Errorf("timestamp provided in incorrect format: %s spec: %+v", err.Error(), spec)
 		}
 
-		if recordTs.After(spec.StartTs) && recordTs.Before(spec.EndTs) {
+		recordTsStart := recordTsEnd.Add(time.Duration(24 * time.Hour))
+
+		if recordTsStart.After(spec.StartTs) && recordTsEnd.Before(spec.EndTs) {
 			ret = append(ret, record)
 		}
 	}
