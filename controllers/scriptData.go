@@ -3,12 +3,13 @@ package controllers
 import (
 	"errors"
 	"fmt"
-	"scripts-api/formatters"
-	"scripts-api/model"
 	"strconv"
 
+	"github.com/elmodis/go-libs/api/logging"
+	"github.com/elmodis/go-libs/formatters"
 	"github.com/elmodis/go-libs/models"
 	"github.com/elmodis/go-libs/models/properties"
+	"github.com/elmodis/go-libs/models/specs"
 	"github.com/elmodis/go-libs/parsers"
 	"github.com/elmodis/go-libs/repositories"
 	"github.com/elmodis/go-libs/validators"
@@ -16,7 +17,7 @@ import (
 )
 
 type ScriptDataController struct {
-	ScriptRepo        repositories.ImmutableSpecRepository[[]map[string]any, model.ScriptSpec]
+	ScriptRepo        repositories.ImmutableSpecRepository[[]map[string]any, specs.ScriptSpec]
 	AssetRepo         repositories.ImmutableRepository[properties.Asset]
 	Filter            map[string]parsers.Parser[[]string]
 	Timestamp         parsers.Parser[models.TimeRange]
@@ -40,28 +41,30 @@ func (c *ScriptDataController) GetData() gin.HandlerFunc {
 
 		spec, err := c.parseSpec(ctx)
 		if err != nil {
+			logging.ControllerError("scriptData", "getData", ctx.Request.Method, ctx.Request.RequestURI, nil, err)
 			ctx.String(400, err.Error())
 			return
 		}
 
 		ret, err := c.ScriptRepo.SelectSpec(scriptName, spec)
 		if err != nil {
+			logging.ControllerError("scriptData", "getData", ctx.Request.Method, ctx.Request.RequestURI, nil, err)
 			ctx.String(500, err.Error())
 			return
 		}
 
 		_, err = fmter.Format(*ret, ctx)
 		if err != nil {
+			logging.ControllerError("scriptData", "getData", ctx.Request.Method, ctx.Request.RequestURI, nil, err)
 			ctx.String(500, err.Error())
 			return
 		}
-		// ctx.String(200, retStr)
 	}
 
 }
 
-func (c *ScriptDataController) parseSpec(ctx *gin.Context) (*model.ScriptSpec, error) {
-	spec := new(model.ScriptSpec)
+func (c *ScriptDataController) parseSpec(ctx *gin.Context) (*specs.ScriptSpec, error) {
+	spec := new(specs.ScriptSpec)
 
 	tsStr := ctx.Query("ts")
 	if tsStr == "" {
