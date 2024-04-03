@@ -7,12 +7,13 @@ import (
 
 	"golang.org/x/exp/slices"
 
+	"github.com/gin-gonic/gin"
 	"github.com/mitchellh/mapstructure"
 )
 
 type CSVFormatter[T any] struct{}
 
-func (f *CSVFormatter[T]) Format(in []T) (string, error) {
+func (f *CSVFormatter[T]) Format(in []T, ctx *gin.Context) (string, error) {
 	var buf bytes.Buffer
 	writer := csv.NewWriter(&buf)
 
@@ -50,5 +51,6 @@ func (f *CSVFormatter[T]) Format(in []T) (string, error) {
 		return "", fmt.Errorf("writer: %s", err.Error())
 	}
 
+	ctx.String(200, buf.String())
 	return buf.String(), nil
 }
