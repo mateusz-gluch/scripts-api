@@ -12,7 +12,6 @@ import (
 	"github.com/elmodis/go-libs/caches"
 	cli "github.com/elmodis/go-libs/clients"
 	"github.com/elmodis/go-libs/fileengines"
-	"github.com/elmodis/go-libs/models/enums"
 	"github.com/elmodis/go-libs/models/properties"
 	"github.com/elmodis/go-libs/parsers"
 	"github.com/elmodis/go-libs/repositories"
@@ -28,6 +27,12 @@ var engine, metrics *gin.Engine
 
 var data ctrl.ScriptDataController
 var misc ctrl.MiscController
+
+var (
+	eventCategories = []string{
+		"machine", "data", "diagnostics", "maintenance",
+		"system", "anomaly", "ai_maintenance", "ai_energy"}
+)
 
 func init() {
 
@@ -82,13 +87,13 @@ func init() {
 
 	filterParser := map[string]parsers.Parser[[]string]{
 		"category": &parsers.SequenceParser{
-			Valid:     &validators.EnumValidator{Enum: enums.Category{}},
+			Valid:     validators.NewEnumValidator(eventCategories...),
 			Separator: ",",
 		},
 	}
 
 	assetParser := &parsers.SequenceParser{
-		Valid:     &validators.NumericIdValidator{},
+		Valid:     validators.NewIdValidator(),
 		Separator: ",",
 	}
 
@@ -103,8 +108,8 @@ func init() {
 		AssetRepo:         assets,
 		Filter:            filterParser,
 		AssetParser:       assetParser,
-		OrganizationValid: &validators.NumericIdValidator{},
-		Timestamp:         &parsers.TimestampParser{TsValid: &validators.TimestampValidator{}},
+		OrganizationValid: validators.NewIdValidator(),
+		Timestamp:         &parsers.TimestampParser{TsValid: validators.NewFreeTimestampValidator()},
 	}
 
 	docs.SwaggerInfo.Host = cfg.Host
