@@ -3,8 +3,17 @@ package controllers
 import (
 	"net/http"
 
+	"github.com/elmodis/go-libs/api"
 	"github.com/gin-gonic/gin"
 )
+
+func NewMiscController(c *api.MiscConfig) *MiscController {
+	ret := new(MiscController)
+	ret.RootMessage = c.RootMessage
+	ret.PingValue = c.PingValue
+	ret.Version = c.Version
+	return ret
+}
 
 type MiscController struct {
 	RootMessage string

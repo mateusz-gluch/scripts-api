@@ -21,6 +21,12 @@ github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/elmodis/go-libs v0.0.0-20240418124101-4f37124507f7 h1:PkRd6jZ3zcK8EY8YnQFq9xJE3BL6/oPLgh5HQiYD4H4=
 github.com/elmodis/go-libs v0.0.0-20240418124101-4f37124507f7/go.mod h1:6Ekh6TK/CzuulZRkHKNmCwVz+mkwZMrd+lXWFR9mwy8=
+github.com/elmodis/go-libs v0.0.0-20240516131956-d01ecc2c6ab4 h1:TplpUL6VIJ3tU4ZcfpbAIrK5kCxSdc2UQk19OZ1BG1s=
+github.com/elmodis/go-libs v0.0.0-20240516131956-d01ecc2c6ab4/go.mod h1:tjXGsWFXfXvxUn+pk7HNHU0ML/7bKLYkRW/GQgIcNoE=
+github.com/elmodis/go-libs v0.0.0-20240516144559-f0c248d504c8 h1:nycwY7dWPv+XIcN8EYyhATbUEmVR19v8vbalOG8LONk=
+github.com/elmodis/go-libs v0.0.0-20240516144559-f0c248d504c8/go.mod h1:tjXGsWFXfXvxUn+pk7HNHU0ML/7bKLYkRW/GQgIcNoE=
+github.com/elmodis/go-libs v0.0.0-20240516145205-4b912b0839bd h1:GE5mYumtKo6Uu4Dj3nffbk8szleSR6Bh5arfuNvz6Io=
+github.com/elmodis/go-libs v0.0.0-20240516145205-4b912b0839bd/go.mod h1:tjXGsWFXfXvxUn+pk7HNHU0ML/7bKLYkRW/GQgIcNoE=
 github.com/gabriel-vasile/mimetype v1.4.2 h1:w5qFW6JKBz9Y393Y4q372O9A7cUSequkh1Q7OhCmWKU=
 github.com/gabriel-vasile/mimetype v1.4.2/go.mod h1:zApsH/mKG4w07erKIaJPFiX0Tsq9BFQgN3qGY5GnNgA=
 github.com/gin-contrib/gzip v0.0.6 h1:NjcunTcGAj5CO1gn4N8jHOSIeRFHIbn51z6K+xaN4d4=

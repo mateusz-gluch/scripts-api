@@ -3,7 +3,7 @@ module scripts-api
 go 1.19
 
 require (
-	github.com/elmodis/go-libs v0.0.0-20240418124101-4f37124507f7
+	github.com/elmodis/go-libs v0.0.0-20240516145205-4b912b0839bd
 	github.com/gin-gonic/gin v1.9.1
 	github.com/swaggo/files v1.0.1
 	github.com/swaggo/gin-swagger v1.6.0
