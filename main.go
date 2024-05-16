@@ -15,7 +15,6 @@ import (
 	"github.com/elmodis/go-libs/models/properties"
 	"github.com/elmodis/go-libs/parsers"
 	"github.com/elmodis/go-libs/repositories"
-	"github.com/elmodis/go-libs/validators"
 	"github.com/sirupsen/logrus"
 
 	"github.com/gin-gonic/gin"
@@ -25,11 +24,12 @@ import (
 
 var engine, metrics *gin.Engine
 
-var data ctrl.ScriptDataController
-var misc ctrl.MiscController
+var data *ctrl.ScriptDataController
+var misc *ctrl.MiscController
 
 var (
-	eventCategories = []string{
+	assetCacheExpiration = 30 * time.Minute
+	eventCategories      = []string{
 		"machine", "data", "diagnostics", "maintenance",
 		"system", "anomaly", "ai_maintenance", "ai_energy"}
 )
@@ -39,7 +39,7 @@ func init() {
 	c := &configurators.EnvConfig{}
 	cfg := c.GetConfig()
 
-	log.Configure()
+	logger := log.Configure(cfg.Environment)
 
 	if cfg.Environment == "development" {
 		logrus.SetLevel(logrus.DebugLevel)
@@ -49,68 +49,28 @@ func init() {
 
 	engine = gin.New()
 	engine.Use(gin.Recovery())
-	engine.Use(log.Middleware())
+	engine.Use(log.Middleware(logger))
 	engine.Use(monitoring.Middleware("scripts"))
 
 	metrics = gin.New()
 	metrics.Use(gin.Recovery())
 
-	assetsApi := &cli.ApiClient{
-		Kind: "Internal",
-		Url:  cfg.AssetsUrl,
-	}
+	assetsApi := cli.NewApiClient(cfg.AssetsUrl, "assets-api", logger)
+	assetsCache := caches.NewExpirationCache(new(any), "assets-cache", assetCacheExpiration, logger)
+	assetsCApi := cli.NewCacheClient(assetsApi, assetsCache, "assets", logger)
 
-	exp, _ := time.ParseDuration("30m")
-	assetsCache, err := caches.NewExpKVCache[any](caches.Config{
-		"duration": exp,
-		"label":    "Assets",
-	})
-
-	if err != nil {
-		logrus.WithField("Error", err).Fatal("Could not initialize Assets Cache")
-	}
-
-	assetsCachingApi := &cli.CachingClient{
-		Remote: assetsApi,
-		Local:  assetsCache,
-	}
-
-	assets := &repositories.PropertiesAPIRepo[properties.Asset]{
-		Engine:   assetsCachingApi,
-		Label:    "assets",
-		PathSpec: "assets/%s",
-	}
+	assets := repositories.NewPropertiesRepo(properties.Asset{}, assetsCApi, "assets/%s", nil, "assets", logger)
 
 	scriptData := &repositories.ScriptDataRepository{
 		Engine: &fileengines.CSVEngine{RootDir: cfg.MountPath},
 	}
 
 	filterParser := map[string]parsers.Parser[[]string]{
-		"category": &parsers.SequenceParser{
-			Valid:     validators.NewEnumValidator(eventCategories...),
-			Separator: ",",
-		},
+		"category": parsers.NewSequenceEnumParser(eventCategories, "category", logger),
 	}
 
-	assetParser := &parsers.SequenceParser{
-		Valid:     validators.NewIdValidator(),
-		Separator: ",",
-	}
-
-	misc = ctrl.MiscController{
-		RootMessage: cfg.RootMessage,
-		PingValue:   1,
-		Version:     cfg.Version,
-	}
-
-	data = ctrl.ScriptDataController{
-		ScriptRepo:        scriptData,
-		AssetRepo:         assets,
-		Filter:            filterParser,
-		AssetParser:       assetParser,
-		OrganizationValid: validators.NewIdValidator(),
-		Timestamp:         &parsers.TimestampParser{TsValid: validators.NewFreeTimestampValidator()},
-	}
+	misc = ctrl.NewMiscController(cfg.Misc)
+	data = ctrl.NewScriptDataController(scriptData, assets, filterParser, logger)
 
 	docs.SwaggerInfo.Host = cfg.Host
 	docs.SwaggerInfo.BasePath = "/scripts"
@@ -139,8 +99,8 @@ func main() {
 	engine.GET("/", misc.Root())
 
 	// counts
-	engine.GET("/events-summary/data", handlers.EventsSummary(&data))
-	engine.GET("/online-summary/data", handlers.OnlineSummary(&data))
+	engine.GET("/events-summary/data", handlers.EventsSummary(data))
+	engine.GET("/online-summary/data", handlers.OnlineSummary(data))
 
 	go metrics.Run(":8081")
 	engine.Run(":8080")

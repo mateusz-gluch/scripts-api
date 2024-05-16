@@ -1,12 +1,15 @@
 package configurators
 
-import "os"
+import (
+	"os"
+
+	"github.com/elmodis/go-libs/api"
+)
 
 type Config struct {
 	Host        string
 	Environment string
-	RootMessage string
-	Version     string
+	Misc        *api.MiscConfig
 	AssetsUrl   string
 	MountPath   string
 }
@@ -18,9 +21,14 @@ func (cfg *EnvConfig) GetConfig() Config {
 	return Config{
 		Host:        os.Getenv("HOST"),
 		Environment: os.Getenv("ENVIRONMENT"),
-		RootMessage: os.Getenv("ROOT_MESSAGE"),
-		Version:     os.Getenv("VERSION"),
-		AssetsUrl:   os.Getenv("ASSETS_URL"),
-		MountPath:   os.Getenv("MOUNT_PATH"),
+
+		Misc: &api.MiscConfig{
+			RootMessage: os.Getenv("ROOT_MESSAGE"),
+			Version:     os.Getenv("VERSION"),
+			PingValue:   1,
+		},
+
+		AssetsUrl: os.Getenv("ASSETS_URL"),
+		MountPath: os.Getenv("MOUNT_PATH"),
 	}
 }

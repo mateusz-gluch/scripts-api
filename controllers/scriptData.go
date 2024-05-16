@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/elmodis/go-libs/api/logging"
+	"github.com/elmodis/go-libs/api"
 	"github.com/elmodis/go-libs/formatters"
 	"github.com/elmodis/go-libs/models"
 	"github.com/elmodis/go-libs/models/properties"
@@ -14,9 +14,31 @@ import (
 	"github.com/elmodis/go-libs/repositories"
 	"github.com/elmodis/go-libs/validators"
 	"github.com/gin-gonic/gin"
+	"github.com/rs/zerolog"
 )
 
+func NewScriptDataController(
+	scriptData repositories.ImmutableSpecRepository[[]map[string]any, specs.ScriptSpec],
+	assets repositories.ImmutableRepository[properties.Asset],
+	filter map[string]parsers.Parser[[]string],
+	log *zerolog.Logger,
+) *ScriptDataController {
+	ret := new(ScriptDataController)
+	ret.Label = "script-data"
+	ret.Log = log
+
+	ret.ScriptRepo = scriptData
+	ret.AssetRepo = assets
+	ret.Filter = filter
+
+	ret.Timestamp = parsers.NewUnboundTimestampParser("ts", log)
+	ret.AssetParser = parsers.NewSequenceIdParser("assets", log)
+	ret.OrganizationValid = validators.NewIdValidator(log)
+	return ret
+}
+
 type ScriptDataController struct {
+	api.ControllerTemplate
 	ScriptRepo        repositories.ImmutableSpecRepository[[]map[string]any, specs.ScriptSpec]
 	AssetRepo         repositories.ImmutableRepository[properties.Asset]
 	Filter            map[string]parsers.Parser[[]string]
@@ -27,10 +49,11 @@ type ScriptDataController struct {
 
 func (c *ScriptDataController) GetData() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
+		op := "getdata"
+		c.HandleDebug(op, ctx)
 		var fmter formatters.Formatter[map[string]any]
 
 		scriptName := ctx.Param("scriptName")
-
 		content := ctx.GetHeader("Accept")
 
 		if content == "text/csv" {
@@ -41,22 +64,19 @@ func (c *ScriptDataController) GetData() gin.HandlerFunc {
 
 		spec, err := c.parseSpec(ctx)
 		if err != nil {
-			logging.ControllerError("scriptData", "getData", ctx.Request.Method, ctx.Request.RequestURI, nil, err)
-			ctx.String(400, err.Error())
+			c.HandleBadRequest(op, ctx, "spec: %s", err.Error())
 			return
 		}
 
 		ret, err := c.ScriptRepo.SelectSpec(scriptName, spec)
 		if err != nil {
-			logging.ControllerError("scriptData", "getData", ctx.Request.Method, ctx.Request.RequestURI, nil, err)
-			ctx.String(500, err.Error())
+			c.HandleServerError(op, ctx, "data: %s", err.Error())
 			return
 		}
 
 		_, err = fmter.Format(*ret, ctx)
 		if err != nil {
-			logging.ControllerError("scriptData", "getData", ctx.Request.Method, ctx.Request.RequestURI, nil, err)
-			ctx.String(500, err.Error())
+			c.HandleServerError(op, ctx, "format: %s", err.Error())
 			return
 		}
 	}
