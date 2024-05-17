@@ -71,7 +71,7 @@ func (c *ScriptDataController) GetData() gin.HandlerFunc {
 		ret, err := c.ScriptRepo.SelectSpec(scriptName, spec)
 		if err != nil {
 			// c.HandleServerError(op, ctx, "data: %s", err.Error())
-			fmter.Format([]map[string]any{{}}, ctx)
+			fmter.Format([]map[string]any{}, ctx)
 			return
 		}
 
