@@ -4,18 +4,20 @@ import (
 	"scripts-api/configurators"
 	ctrl "scripts-api/controllers"
 	"scripts-api/docs"
-	"scripts-api/handlers"
+	model "scripts-api/models"
+	repos "scripts-api/repositories"
 	"time"
 
 	log "github.com/elmodis/go-libs/api/logging"
 	"github.com/elmodis/go-libs/api/monitoring"
 	"github.com/elmodis/go-libs/caches"
 	cli "github.com/elmodis/go-libs/clients"
-	"github.com/elmodis/go-libs/fileengines"
 	"github.com/elmodis/go-libs/models/properties"
 	"github.com/elmodis/go-libs/parsers"
 	"github.com/elmodis/go-libs/repositories"
 	"github.com/sirupsen/logrus"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 
 	"github.com/gin-gonic/gin"
 	swaggerfiles "github.com/swaggo/files"
@@ -24,14 +26,15 @@ import (
 
 var engine, metrics *gin.Engine
 
-var data *ctrl.ScriptDataController
 var misc *ctrl.MiscController
+var events *ctrl.SummaryDataController[model.EventSummary]
+var online *ctrl.SummaryDataController[model.OnlineSummary]
 
 var (
 	assetCacheExpiration = 30 * time.Minute
 	eventCategories      = []string{
 		"machine", "data", "diagnostics", "maintenance",
-		"system", "anomaly", "ai_maintenance", "ai_energy"}
+		"system", "anomaly", "prediction", "energy"}
 )
 
 func init() {
@@ -41,8 +44,21 @@ func init() {
 
 	logger := log.Configure(cfg.Environment)
 
+	dsn, err := cfg.Postgres.ConnectionString()
+	if err != nil {
+		logger.Fatal().Err(err).Msg("Connection String Error")
+		return
+	}
+
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	if err != nil {
+		logger.Fatal().Err(err).Msg("Database Connection Error.")
+		return
+	}
+
 	if cfg.Environment == "development" {
 		logrus.SetLevel(logrus.DebugLevel)
+		db = db.Debug()
 	} else {
 		gin.SetMode(gin.ReleaseMode)
 	}
@@ -61,19 +77,23 @@ func init() {
 
 	assets := repositories.NewPropertiesRepo(properties.Asset{}, assetsCApi, "assets/%s", nil, "assets", logger)
 
-	scriptData := &repositories.ScriptDataRepository{
-		Engine: &fileengines.CSVEngine{RootDir: cfg.MountPath},
-	}
-
 	filterParser := map[string]parsers.Parser[[]string]{
 		"category": parsers.NewSequenceEnumParser(eventCategories, "category", logger),
 	}
 
 	misc = ctrl.NewMiscController(cfg.Misc)
-	data = ctrl.NewScriptDataController(scriptData, assets, filterParser, logger)
+
+	eventsFmt := model.EventFormatter{}
+	onlineFmt := model.OnlineFormatter{}
+
+	eventsData := repos.NewSummaryDataRepository[model.EventSummary](model.EventSummary{}, eventsFmt, db, logger, true)
+	events = ctrl.NewSummaryDataController(eventsData, cfg.EventsTable, assets, filterParser, logger)
+
+	onlineData := repos.NewSummaryDataRepository[model.OnlineSummary](model.OnlineSummary{}, onlineFmt, db, logger, false)
+	online = ctrl.NewSummaryDataController(onlineData, cfg.OnlineTable, assets, nil, logger)
 
 	docs.SwaggerInfo.Host = cfg.Host
-	docs.SwaggerInfo.BasePath = "/scripts"
+	docs.SwaggerInfo.BasePath = cfg.BasePath
 }
 
 // @title						Internal Scripts API
@@ -99,8 +119,8 @@ func main() {
 	engine.GET("/", misc.Root())
 
 	// counts
-	engine.GET("/events-summary/data", handlers.EventsSummary(data))
-	engine.GET("/online-summary/data", handlers.OnlineSummary(data))
+	engine.GET("/events-summary/data", events.GetData())
+	engine.GET("/online-summary/data", online.GetData())
 
 	go metrics.Run(":8081")
 	engine.Run(":8080")

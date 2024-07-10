@@ -41,6 +41,113 @@ const docTemplate = `{
                 }
             }
         },
+        "/events-summary/data": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Data"
+                ],
+                "summary": "Retrieves script data for asset context",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "367,333",
+                        "description": "Comma separated list of Asset IDs",
+                        "name": "assets",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "1708300800:1708387200",
+                        "description": "Timestamp range in format {startTs}:{endTs}. Timestamps in seconds, tz=UTC",
+                        "name": "ts",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "default": "144h",
+                        "description": "Span description string",
+                        "name": "span",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "example": "MACHINE,DATA",
+                        "description": "Comma separated list of event categories",
+                        "name": "category",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "additionalProperties": true
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/online-summary/data": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Data"
+                ],
+                "summary": "Retrieves online-summary script data for asset context",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "367,333",
+                        "description": "Comma separated list of Asset IDs",
+                        "name": "assets",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "1708300800:1708387200",
+                        "description": "Timestamp range in format {startTs}:{endTs}. Timestamps in seconds, tz=UTC",
+                        "name": "ts",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "default": "144h",
+                        "description": "Span description string",
+                        "name": "span",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "additionalProperties": true
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/ping": {
             "get": {
                 "description": "Retrieves and prints ping message.",
